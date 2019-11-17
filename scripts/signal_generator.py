@@ -24,15 +24,18 @@ class SignalGenerator(object):
         self.ddr = DDynamicReconfigure("")
         self.ddr.add_variable("server", "dynamic reconfigure server", "")
         self.ddr.add_variable("param", "dr parameter name", "")
-        self.ddr.add_variable("period", "update period", 0.25, 0.2, 10.0)
-        self.num_freqs = 4
+        # The dynamic reconfigure probably won't go lower than 0.1,
+        # 0.01 only works for topics
+        self.ddr.add_variable("period", "update period", 0.01, 0.2, 10.0)
+        self.num_freqs = 3
         for i in range(self.num_freqs):
             si = str(i)
             fr = float(i) / float(self.num_freqs)
-            self.ddr.add_variable("f" + si, "frequency " + si, 1.0 - fr * fr, 0.0, 10.0)
-            self.ddr.add_variable("a" + si, "amplitude " + si,
+            self.ddr.add_variable("freq" + si, "frequency " + si, 1.0 - fr * fr, 0.0, 10.0)
+            self.ddr.add_variable("amp" + si, "amplitude " + si,
                                   fr, 0.0, 2.0)
-            self.ddr.add_variable("p" + si, "phase " + si, 0.0, -math.pi, math.pi)
+            self.ddr.add_variable("phase" + si, "phase " + si, 0.0, -math.pi, math.pi)
+            self.ddr.add_variable("offset" + si, "offset " + si, 0.0, -5.0, 5.0)
             # TODO(lucasw) sine, sawtooth, ramp, square
         self.ddr.start(self.config_callback)
 
@@ -84,6 +87,10 @@ class SignalGenerator(object):
         return True
 
     def connect_server(self):
+        if self.config.server == '':
+            self.dr_client = None
+            self.new_server = False
+            return True
         try:
             self.dr_client = Client(self.config.server,
                                     timeout=0.05,
@@ -91,7 +98,7 @@ class SignalGenerator(object):
             self.new_server = False
             rospy.loginfo("connected to new server '" + self.config.server + "'")
         except:
-            rospy.logerr_throttle(5.0, "no server available " + self.config.server)
+            rospy.logerr_throttle(5.0, "no server available '" + self.config.server + "'")
             return False
         return True
 
@@ -106,16 +113,14 @@ class SignalGenerator(object):
             # TODO(lucasw) want to smoothly transition when
             # frequencies change, to do that need to offset phase in a way
             # that puts the old frequency and the new one at the same value.
-            theta = 2.0 * math.pi * self.config["f" + si] * dt + self.config["p" + si]
-            val += self.config["a" + si] * math.sin(theta)
+            theta = 2.0 * math.pi * self.config["freq" + si] * dt + self.config["phase" + si]
+            val += self.config["amp" + si] * math.sin(theta) + self.config["offset" + si]
 
         self.pub.publish(Float32(val))
 
         if self.new_server:
             self.connect_server()
 
-        if self.dr_client is None:
-            return
         self.safe_update_config({self.config.param: val})
 
 if __name__ == '__main__':

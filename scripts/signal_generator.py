@@ -5,23 +5,26 @@
 
 import math
 import rospy
+import threading
 
 from ddynamic_reconfigure_python.ddynamic_reconfigure import DDynamicReconfigure
+from dynamic_reconfigure.client import Client
 from std_msgs.msg import Float32
 
 
 class SignalGenerator(object):
     def __init__(self):
         self.t0 = rospy.Time.now()
-        self.timer = 0
+        self.timer = None
         self.config = None
-
+        self.dr_client = None
+        self.new_server = False
         self.pub = rospy.Publisher("signal", Float32, queue_size=2)
 
         self.ddr = DDynamicReconfigure("")
-        self.ddr.add_variable("dr_server", "dynamic reconfigure server", "")
-        self.ddr.add_variable("name", "dr parameter name", "")
-        self.ddr.add_variable("period", "update period", 0.1, 0.01, 10.0)
+        self.ddr.add_variable("server", "dynamic reconfigure server", "")
+        self.ddr.add_variable("param", "dr parameter name", "")
+        self.ddr.add_variable("period", "update period", 0.25, 0.2, 10.0)
         self.num_freqs = 4
         for i in range(self.num_freqs):
             si = str(i)
@@ -41,10 +44,56 @@ class SignalGenerator(object):
 
     def config_callback(self, config, level):
         if self.is_changed(config, 'period'):
+            if self.timer:
+                self.timer.shutdown()
             self.timer = rospy.Timer(rospy.Duration(config.period), self.update)
+        if self.is_changed(config, 'server'):
+            self.new_server = True
 
         self.config = config
         return config
+
+    def server_dr_callback(self, config):
+        rospy.logdebug(config)
+
+    def safe_update_config(self, values):
+        if self.dr_client is None:
+            return False
+
+        update_timeout = 1.0
+        # TODO(lucasw) could follow https://stackoverflow.com/questions/2829329/catch-a-threads-exception-in-the-caller-thread-in-python
+        # and pass a message back if the update configuration fails
+        try:
+            th1 = threading.Thread(target=self.dr_client.update_configuration,
+                                   args=[values])
+            th1.start()
+            t1 = rospy.Time.now()
+            while ((rospy.Time.now() - t1).to_sec() < update_timeout):
+                if th1.isAlive():
+                    rospy.sleep(0.05)
+                else:
+                    break
+            if th1.isAlive():
+                # TODO(lucasw) how to kill t1- or does it matter?
+                raise RuntimeError("timeout")
+        except RuntimeError as ex:
+            # self.dr_client = None
+            rospy.logerr(ex + " " + str(self.config.server) + " " +
+                         self.config.param)
+            return False
+        return True
+
+    def connect_server(self):
+        try:
+            self.dr_client = Client(self.config.server,
+                                    timeout=0.05,
+                                    config_callback=self.server_dr_callback)
+            self.new_server = False
+            rospy.loginfo("connected to new server '" + self.config.server + "'")
+        except:
+            rospy.logerr_throttle(5.0, "no server available " + self.config.server)
+            return False
+        return True
 
     def update(self, event):
         if self.config is None:
@@ -61,6 +110,13 @@ class SignalGenerator(object):
             val += self.config["a" + si] * math.sin(theta)
 
         self.pub.publish(Float32(val))
+
+        if self.new_server:
+            self.connect_server()
+
+        if self.dr_client is None:
+            return
+        self.safe_update_config({self.config.param: val})
 
 if __name__ == '__main__':
     rospy.init_node('signal_generator')

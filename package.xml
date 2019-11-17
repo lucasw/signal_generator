@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <name>signal_generator</name>
+  <version>0.0.1</version>
+  <description>Generate signals, compositions of sinusoids, ramps, sawtooth, square, and noise</description>
+  <maintainer email="wsacul@gmail.com">Lucas Walter</maintainer>
+  <license>BSD3</license>
+  <url type="website">https://github.com/lucasw/signal_generator</url>
+  <author email="wsacul@gmail.com">Lucas Walter</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>ddynamic_reconfigure</build_depend>
+  <build_depend>roslint</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>ddynamic_reconfigure</run_depend>
+  <run_depend>roslint</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+
+  <export>
+  </export>
+</package>

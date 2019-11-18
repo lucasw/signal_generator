@@ -19,11 +19,12 @@ class SignalGenerator(object):
         self.config = None
         self.dr_client = None
         self.new_server = False
-        self.pub = rospy.Publisher("signal", Float32, queue_size=2)
+        self.pub = None
 
         self.ddr = DDynamicReconfigure("")
         self.ddr.add_variable("server", "dynamic reconfigure server", "")
         self.ddr.add_variable("param", "dr parameter name", "")
+        self.ddr.add_variable("topic", "topic name", "signal")
         # The dynamic reconfigure probably won't go lower than 0.1,
         # 0.01 only works for topics
         self.ddr.add_variable("period", "update period", 0.01, 0.2, 10.0)
@@ -52,6 +53,8 @@ class SignalGenerator(object):
             self.timer = rospy.Timer(rospy.Duration(config.period), self.update)
         if self.is_changed(config, 'server'):
             self.new_server = True
+        if self.is_changed(config, 'topic'):
+            self.pub = rospy.Publisher(config.topic, Float32, queue_size=2)
 
         self.config = config
         return config
@@ -116,7 +119,8 @@ class SignalGenerator(object):
             theta = 2.0 * math.pi * self.config["freq" + si] * dt + self.config["phase" + si]
             val += self.config["amp" + si] * math.sin(theta) + self.config["offset" + si]
 
-        self.pub.publish(Float32(val))
+        if self.pub is not None:
+            self.pub.publish(Float32(val))
 
         if self.new_server:
             self.connect_server()

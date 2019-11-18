@@ -27,7 +27,7 @@ class SignalGenerator(object):
         self.ddr.add_variable("topic", "topic name", "signal")
         # The dynamic reconfigure probably won't go lower than 0.1,
         # 0.01 only works for topics
-        self.ddr.add_variable("period", "update period", 0.01, 0.2, 10.0)
+        self.ddr.add_variable("period", "update period", 0.05, 0.01, 10.0)
         self.num_freqs = 3
         for i in range(self.num_freqs):
             si = str(i)

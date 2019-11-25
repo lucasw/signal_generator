@@ -67,7 +67,8 @@ class SignalGenerator(object):
             return False
 
         update_timeout = 1.0
-        # TODO(lucasw) could follow https://stackoverflow.com/questions/2829329/catch-a-threads-exception-in-the-caller-thread-in-python
+        # TODO(lucasw) could follow
+        # https://stackoverflow.com/questions/2829329/catch-a-threads-exception-in-the-caller-thread-in-python
         # and pass a message back if the update configuration fails
         try:
             th1 = threading.Thread(target=self.dr_client.update_configuration,

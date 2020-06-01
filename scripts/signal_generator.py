@@ -101,7 +101,7 @@ class SignalGenerator(object):
                                     config_callback=self.server_dr_callback)
             self.new_server = False
             rospy.loginfo("connected to new server '" + self.config.server + "'")
-        except:
+        except Exception as ex:
             rospy.logerr_throttle(5.0, "no server available '" + self.config.server + "'")
             return False
         return True
@@ -127,6 +127,7 @@ class SignalGenerator(object):
             self.connect_server()
 
         self.safe_update_config({self.config.param: val})
+
 
 if __name__ == '__main__':
     rospy.init_node('signal_generator')

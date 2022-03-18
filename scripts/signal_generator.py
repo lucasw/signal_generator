@@ -85,8 +85,7 @@ class SignalGenerator(object):
                 raise RuntimeError("timeout")
         except RuntimeError as ex:
             # self.dr_client = None
-            rospy.logerr(ex + " " + str(self.config.server) + " " +
-                         self.config.param)
+            rospy.logerr(f"{ex} {self.config.server} {self.config.param}")
             return False
         return True
 
@@ -102,6 +101,7 @@ class SignalGenerator(object):
             self.new_server = False
             rospy.loginfo("connected to new server '" + self.config.server + "'")
         except Exception as ex:
+            rospy.logdebug_throttle(5.0, ex)
             rospy.logerr_throttle(5.0, "no server available '" + self.config.server + "'")
             return False
         return True

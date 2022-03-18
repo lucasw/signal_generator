@@ -33,6 +33,7 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS
+  scripts/integrator.py
   scripts/signal_generator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

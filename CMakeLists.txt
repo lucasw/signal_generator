@@ -4,10 +4,8 @@ project(signal_generator)
 # add_compile_options(-std=c++1z)
 
 find_package(catkin REQUIRED COMPONENTS
-  dynamic_reconfigure
   ddynamic_reconfigure
-  message_generation
-  # roscpp
+  dynamic_reconfigure
   roslint
   rospy
   std_msgs
@@ -24,7 +22,11 @@ roslint_python()
 
 catkin_package(
   # INCLUDE_DIRS include
-  CATKIN_DEPENDS ddynamic_reconfigure
+  CATKIN_DEPENDS
+  ddynamic_reconfigure
+  dynamic_reconfigure
+  std_msgs
+  visualization_msgs
 )
 
 include_directories(
